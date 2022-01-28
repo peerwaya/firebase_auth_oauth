@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import FirebaseAuth
+import FirebaseCore
 
 public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 	private static let CREATE_USER_METHOD = "signInOAuth"
@@ -10,6 +11,7 @@ public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 	private var call: FlutterMethodCall?
 	private var result: FlutterResult?
 	private(set) public var authProvider: OAuthProvider?
+    private(set) public var auth: Auth?
 	var arguments: [String: String]?
 	
 	public static func register(with registrar: FlutterPluginRegistrar) {
@@ -29,6 +31,12 @@ public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 				)
 				return
 			}
+            let app = arguments["app"];
+            if (app != nil) {
+                self.auth = Auth.auth(app: FirebaseApp.app(name: app!)!)
+            } else {
+                self.auth = Auth.auth()
+            }
 			if providerId == "apple.com" {
 				if #available(iOS 13.0, *) {
 					signInWithApple(arguments: arguments)
@@ -36,7 +44,7 @@ public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 					finalizeResult(FirebaseAuthOAuthPluginError.PluginError(error: "Sign in by Apple is not supported for this iOS version"))
 				}
 			} else {
-				authProvider = OAuthProvider(providerID: providerId)
+                authProvider = OAuthProvider(providerID: providerId, auth: auth!)
 				oAuthSignIn(arguments: arguments)
 			}
 		} else {
@@ -46,8 +54,8 @@ public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 	
 	func consumeCredentials(_ credential: AuthCredential) {
 		if call?.method == FirebaseAuthOAuthViewController.CREATE_USER_METHOD {
-			Auth.auth().signIn(with: credential) { authResult, error in
-                guard let currentUser = Auth.auth().currentUser else {
+            auth?.signIn(with: credential) { authResult, error in
+                guard let currentUser = self.auth?.currentUser else {
                     self.finalizeResult(.PluginError(error: "currentUser is nil. Make sure a user exists when \(FirebaseAuthOAuthViewController.CREATE_USER_METHOD) is used."))
                     return
                 }
@@ -61,7 +69,7 @@ public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 			}
 		}
 		if call?.method == FirebaseAuthOAuthViewController.LINK_USER_METHOD {
-			guard let currentUser = Auth.auth().currentUser else {
+            guard let currentUser = auth?.currentUser else {
 				self.finalizeResult(.PluginError(error: "currentUser is nil. Make sure a user exists when \(FirebaseAuthOAuthViewController.LINK_USER_METHOD) is used."))
 				return
 			}
@@ -120,5 +128,6 @@ public class FirebaseAuthOAuthViewController: UIViewController, FlutterPlugin {
 		self.call = nil
 		self.result = nil
 		self.authProvider = nil
+        self.auth = nil
 	}
 }

@@ -21,7 +21,8 @@ class MethodChannelFirebaseAuthOAuth extends FirebaseAuthOAuth {
       if (customOAuthParameters != null)
         'parameters': json.encode(customOAuthParameters)
     });
-    return FirebaseAuth.instanceFor(app: _app).currentUser;
+    return await FirebaseAuth.instanceFor(app: _app).authStateChanges().first;
+    // return FirebaseAuth.instanceFor(app: _app).currentUser;
   }
 
   @override
@@ -35,7 +36,8 @@ class MethodChannelFirebaseAuthOAuth extends FirebaseAuthOAuth {
       if (customOAuthParameters != null)
         'parameters': json.encode(customOAuthParameters)
     });
-    return FirebaseAuth.instanceFor(app: _app).currentUser;
+    //return FirebaseAuth.instanceFor(app: _app).currentUser;
+    return await FirebaseAuth.instanceFor(app: _app).authStateChanges().first;
   }
 
   @override
